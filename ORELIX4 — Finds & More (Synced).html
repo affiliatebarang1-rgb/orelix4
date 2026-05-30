@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ORELIX4 — Finds & More</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg:#080808; --bg2:#0f0f0f; --bg3:#161616; --surface:#1a1a1a;
+  --border:rgba(255,255,255,0.06); --border2:rgba(255,255,255,0.12);
+  --white:#f5f5f5; --silver:#a0a0a0; --dim:#555; --glow:rgba(255,255,255,0.08);
+  --gold:#c9a96e; --gold2:rgba(201,169,110,0.15);
+  --red:rgba(220,50,50,0.15); --redborder:rgba(220,50,50,0.3); --redc:#e05050;
+  --radius:16px; --radius-lg:24px; --tr:0.4s cubic-bezier(0.23,1,0.32,1);
+}
+html{scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--white);font-family:'Syne',sans-serif;overflow-x:hidden;cursor:none;}
+#cursor,#cursor-ring{position:fixed;top:0;left:0;border-radius:50%;pointer-events:none;transform:translate(-50%,-50%);z-index:9999;}
+#cursor{width:10px;height:10px;background:var(--white);transition:transform .1s,background .2s;}
+#cursor-ring{width:36px;height:36px;border:1px solid rgba(255,255,255,0.4);z-index:9998;transition:transform .18s,width .3s,height .3s,border-color .3s;}
+body.hovering #cursor{transform:translate(-50%,-50%) scale(2.5);background:var(--gold);}
+body.hovering #cursor-ring{width:56px;height:56px;border-color:var(--gold);}
+#loader{position:fixed;inset:0;z-index:9000;background:var(--bg);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:20px;transition:opacity .6s,visibility .6s;}
+#loader.hidden{opacity:0;visibility:hidden;pointer-events:none;}
+.loader-logo{font-family:'Bebas Neue',sans-serif;font-size:clamp(48px,10vw,96px);letter-spacing:.12em;animation:flicker .8s steps(2) infinite alternate;}
+.loader-bar{width:200px;height:1px;background:var(--border2);position:relative;overflow:hidden;}
+.loader-bar::after{content:'';position:absolute;top:0;left:-100%;width:100%;height:1px;background:linear-gradient(90deg,transparent,var(--white),transparent);animation:loadslide 1.4s ease forwards;}
+@keyframes loadslide{to{left:100%;}}
+@keyframes flicker{from{opacity:1}to{opacity:.7}}
+body::before{content:'';position:fixed;inset:0;z-index:1;pointer-events:none;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");opacity:.35;}
+nav{position:fixed;top:20px;left:50%;transform:translateX(-50%);z-index:100;width:calc(100% - 48px);max-width:1200px;background:rgba(10,10,10,0.7);backdrop-filter:blur(24px);border:1px solid var(--border2);border-radius:100px;padding:14px 28px;display:flex;align-items:center;justify-content:space-between;transition:var(--tr);}
+nav.scrolled{background:rgba(6,6,6,0.92);box-shadow:0 8px 40px rgba(0,0,0,.6);}
+.nav-logo{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:.15em;color:var(--white);text-decoration:none;display:flex;align-items:center;gap:10px;}
+.nav-logo span{font-family:'DM Mono',monospace;font-size:9px;color:var(--silver);letter-spacing:.3em;text-transform:uppercase;border-left:1px solid var(--border2);padding-left:10px;}
+.nav-links{display:flex;align-items:center;gap:8px;list-style:none;}
+.nav-links a{font-family:'DM Mono',monospace;font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--silver);text-decoration:none;padding:8px 16px;border-radius:100px;transition:var(--tr);}
+.nav-links a:hover,.nav-links a.active{color:var(--white);background:var(--glow);}
+.nav-actions{display:flex;align-items:center;gap:10px;}
+.nav-icon-btn{background:none;border:1px solid var(--border);color:var(--silver);width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:none;transition:var(--tr);position:relative;}
+.nav-icon-btn:hover{border-color:var(--border2);color:var(--white);background:var(--glow);}
+.wcount{position:absolute;top:-3px;right:-3px;width:14px;height:14px;background:var(--gold);color:var(--bg);border-radius:50%;font-size:8px;font-weight:700;display:flex;align-items:center;justify-content:center;font-family:'DM Mono',monospace;opacity:0;transition:var(--tr);}
+.wcount.show{opacity:1;}
+.hamburger{display:none;flex-direction:column;gap:5px;cursor:none;background:none;border:none;padding:4px;z-index:400;}
+.hamburger span{display:block;width:22px;height:1.5px;background:var(--white);transition:var(--tr);}
+#home{min-height:100vh;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;padding:120px 24px 80px;}
+.hero-bg{position:absolute;inset:0;background:radial-gradient(ellipse 60% 80% at 50% 30%,rgba(255,255,255,.035) 0%,transparent 70%),radial-gradient(ellipse 40% 40% at 20% 70%,rgba(201,169,110,.04) 0%,transparent 60%);}
+.hero-grid{position:absolute;inset:0;background-image:linear-gradient(var(--border) 1px,transparent 1px),linear-gradient(90deg,var(--border) 1px,transparent 1px);background-size:80px 80px;mask-image:radial-gradient(ellipse 80% 80% at 50% 50%,black 30%,transparent 80%);}
+.hero-content{position:relative;z-index:2;text-align:center;max-width:900px;margin:0 auto;}
+.hero-tag{display:inline-flex;align-items:center;gap:8px;font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.35em;text-transform:uppercase;color:var(--gold);border:1px solid rgba(201,169,110,.3);padding:8px 20px;border-radius:100px;margin-bottom:32px;animation:fadeUp .8s ease .3s both;}
+.hero-tag::before{content:'';width:6px;height:6px;background:var(--gold);border-radius:50%;animation:pgold 2s ease infinite;}
+@keyframes pgold{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(1.4)}}
+.hero-title{font-family:'Bebas Neue',sans-serif;font-size:clamp(88px,18vw,200px);line-height:.88;letter-spacing:.04em;animation:fadeUp .8s ease .5s both;}
+.hero-title .outline{-webkit-text-stroke:1px rgba(255,255,255,.2);color:transparent;}
+.hero-sub{font-family:'DM Mono',monospace;font-size:clamp(11px,2vw,14px);letter-spacing:.5em;text-transform:uppercase;color:var(--silver);margin-top:20px;animation:fadeUp .8s ease .7s both;}
+.hero-sub em{color:var(--white);font-style:normal;}
+.hero-cta{display:flex;align-items:center;justify-content:center;gap:16px;margin-top:52px;animation:fadeUp .8s ease .9s both;flex-wrap:wrap;}
+.btn-primary{padding:16px 36px;background:var(--white);color:var(--bg);border:none;border-radius:100px;font-family:'DM Mono',monospace;font-size:11px;font-weight:600;letter-spacing:.25em;text-transform:uppercase;cursor:none;transition:var(--tr);text-decoration:none;display:inline-block;}
+.btn-primary:hover{transform:translateY(-3px);box-shadow:0 16px 48px rgba(255,255,255,.15);}
+.btn-secondary{padding:16px 36px;background:transparent;color:var(--white);border:1px solid var(--border2);border-radius:100px;font-family:'DM Mono',monospace;font-size:11px;letter-spacing:.25em;text-transform:uppercase;cursor:none;transition:var(--tr);text-decoration:none;display:inline-block;}
+.btn-secondary:hover{border-color:rgba(255,255,255,.3);background:var(--glow);transform:translateY(-3px);}
+.hero-scroll{position:absolute;bottom:40px;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:8px;animation:fadeUp .8s ease 1.2s both;}
+.hero-scroll span{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.3em;color:var(--dim);text-transform:uppercase;}
+.scroll-line{width:1px;height:48px;background:linear-gradient(var(--dim),transparent);animation:scrolldown 2s ease infinite;}
+@keyframes scrolldown{0%{transform:scaleY(0);transform-origin:top}50%{transform:scaleY(1);transform-origin:top}51%{transform:scaleY(1);transform-origin:bottom}100%{transform:scaleY(0);transform-origin:bottom}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
+section{position:relative;z-index:2;}
+.section-header{text-align:center;margin-bottom:64px;}
+.section-tag{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.4em;text-transform:uppercase;color:var(--gold);margin-bottom:16px;display:block;}
+.section-title{font-family:'Bebas Neue',sans-serif;font-size:clamp(48px,8vw,88px);letter-spacing:.06em;line-height:1;}
+.section-line{width:48px;height:1px;background:var(--border2);margin:20px auto 0;}
+.container{max-width:1280px;margin:0 auto;padding:0 24px;}
+#catalog{padding:120px 0;}
+.catalog-controls{display:flex;align-items:center;gap:16px;margin-bottom:48px;flex-wrap:wrap;justify-content:space-between;}
+.search-wrap{position:relative;flex:1;min-width:220px;max-width:360px;}
+.search-wrap svg{position:absolute;left:16px;top:50%;transform:translateY(-50%);color:var(--dim);pointer-events:none;}
+#search-input{width:100%;padding:13px 16px 13px 44px;background:var(--surface);border:1px solid var(--border);border-radius:100px;color:var(--white);font-family:'DM Mono',monospace;font-size:12px;letter-spacing:.1em;outline:none;transition:var(--tr);}
+#search-input:focus{border-color:var(--border2);background:var(--bg3);}
+#search-input::placeholder{color:var(--dim);}
+.filter-wrap{display:flex;gap:8px;flex-wrap:wrap;}
+.filter-btn{padding:10px 20px;background:transparent;border:1px solid var(--border);border-radius:100px;color:var(--silver);font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.2em;text-transform:uppercase;cursor:none;transition:var(--tr);white-space:nowrap;}
+.filter-btn:hover,.filter-btn.active{background:var(--white);color:var(--bg);border-color:var(--white);}
+.add-btn{padding:12px 24px;background:var(--gold2);border:1px solid rgba(201,169,110,.3);border-radius:100px;color:var(--gold);font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.2em;text-transform:uppercase;cursor:none;transition:var(--tr);white-space:nowrap;}
+.add-btn:hover{background:rgba(201,169,110,.25);}
+.product-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:24px;}
+.product-card{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;transition:var(--tr);cursor:none;position:relative;animation:cardIn .6s ease both;}
+@keyframes cardIn{from{opacity:0;transform:translateY(32px)}to{opacity:1;transform:translateY(0)}}
+.product-card:hover{border-color:var(--border2);box-shadow:0 24px 80px rgba(0,0,0,.7);}
+.product-img-wrap{position:relative;overflow:hidden;aspect-ratio:4/5;background:var(--surface);display:block;text-decoration:none;}
+.product-img-wrap img{width:100%;height:100%;object-fit:cover;transition:transform .6s cubic-bezier(.23,1,.32,1);}
+.product-card:hover .product-img-wrap img{transform:scale(1.06);}
+.product-badge{position:absolute;top:12px;left:12px;z-index:2;background:rgba(0,0,0,.7);backdrop-filter:blur(8px);border:1px solid var(--border2);border-radius:100px;padding:5px 12px;font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.25em;color:var(--gold);text-transform:uppercase;}
+.img-overlay{position:absolute;inset:0;background:rgba(0,0,0,0);display:flex;align-items:center;justify-content:center;transition:var(--tr);}
+.img-overlay-label{font-family:'DM Mono',monospace;font-size:11px;letter-spacing:.3em;text-transform:uppercase;color:var(--white);opacity:0;transform:translateY(8px);transition:var(--tr);background:rgba(0,0,0,.6);backdrop-filter:blur(8px);padding:10px 20px;border-radius:100px;border:1px solid var(--border2);}
+.product-card:hover .img-overlay{background:rgba(0,0,0,.25);}
+.product-card:hover .img-overlay-label{opacity:1;transform:translateY(0);}
+.wl-btn{position:absolute;top:12px;right:12px;z-index:3;width:34px;height:34px;background:rgba(0,0,0,.6);backdrop-filter:blur(8px);border:1px solid var(--border);border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:none;transition:var(--tr);color:var(--dim);transform:translateY(-8px);opacity:0;}
+.product-card:hover .wl-btn{transform:translateY(0);opacity:1;}
+.wl-btn:hover,.wl-btn.active{color:#e05;border-color:rgba(230,0,80,.3);background:rgba(230,0,80,.1);}
+.wl-btn svg{width:14px;height:14px;}
+.card-actions{position:absolute;bottom:0;left:0;right:0;z-index:3;padding:8px;display:flex;gap:6px;opacity:0;transform:translateY(8px);transition:var(--tr);}
+.product-card:hover .card-actions{opacity:1;transform:translateY(0);}
+.card-edit-btn,.card-del-btn{flex:1;padding:9px;border-radius:100px;font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.2em;text-transform:uppercase;cursor:none;transition:var(--tr);border:1px solid;display:flex;align-items:center;justify-content:center;gap:4px;}
+.card-edit-btn{background:rgba(0,0,0,.7);border-color:var(--border2);color:var(--silver);backdrop-filter:blur(8px);}
+.card-edit-btn:hover{color:var(--white);border-color:rgba(255,255,255,.3);}
+.card-del-btn{background:var(--red);border-color:var(--redborder);color:var(--redc);backdrop-filter:blur(8px);}
+.card-del-btn:hover{background:rgba(220,50,50,.25);}
+.product-info{padding:20px;}
+.product-cat{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.35em;color:var(--dim);text-transform:uppercase;margin-bottom:6px;}
+.product-name{font-family:'Syne',sans-serif;font-size:16px;font-weight:700;color:var(--white);margin-bottom:6px;line-height:1.3;}
+.product-desc{font-size:12px;color:var(--silver);line-height:1.6;margin-bottom:16px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+.product-footer{display:flex;align-items:center;justify-content:space-between;gap:12px;}
+.product-price{font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--white);letter-spacing:.05em;flex-shrink:0;}
+.product-price span{font-family:'DM Mono',monospace;font-size:11px;color:var(--silver);font-weight:300;}
+.buy-btn{flex:1;padding:12px 16px;background:var(--white);color:var(--bg);border:none;border-radius:100px;font-family:'DM Mono',monospace;font-size:9px;font-weight:600;letter-spacing:.2em;text-transform:uppercase;cursor:none;transition:var(--tr);display:flex;align-items:center;justify-content:center;gap:6px;text-decoration:none;}
+.buy-btn:hover{transform:scale(1.04);box-shadow:0 8px 24px rgba(255,255,255,.2);}
+.empty-state{grid-column:1/-1;text-align:center;padding:80px 20px;color:var(--dim);font-family:'DM Mono',monospace;font-size:13px;letter-spacing:.2em;}
+/* SYNC STATUS */
+.sync-badge{display:inline-flex;align-items:center;gap:6px;font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.2em;color:var(--dim);padding:6px 14px;border:1px solid var(--border);border-radius:100px;}
+.sync-dot{width:6px;height:6px;border-radius:50%;background:var(--dim);}
+.sync-dot.ok{background:#4caf50;animation:pulse-green 2s infinite;}
+.sync-dot.loading{background:var(--gold);animation:pulse-gold 1s infinite;}
+.sync-dot.err{background:var(--redc);}
+@keyframes pulse-green{0%,100%{opacity:1}50%{opacity:.4}}
+@keyframes pulse-gold{0%,100%{opacity:1}50%{opacity:.3}}
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;z-index:500;background:rgba(0,0,0,.85);backdrop-filter:blur(12px);display:flex;align-items:center;justify-content:center;padding:24px;opacity:0;visibility:hidden;transition:var(--tr);}
+.modal-overlay.open{opacity:1;visibility:visible;}
+.modal{background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:36px;width:100%;max-width:560px;max-height:92vh;overflow-y:auto;transform:translateY(24px) scale(.97);transition:var(--tr);}
+.modal-overlay.open .modal{transform:translateY(0) scale(1);}
+.modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:28px;}
+.modal-title{font-family:'Bebas Neue',sans-serif;font-size:30px;letter-spacing:.1em;}
+.modal-close{background:none;border:1px solid var(--border);color:var(--silver);width:34px;height:34px;border-radius:50%;cursor:none;transition:var(--tr);display:flex;align-items:center;justify-content:center;font-size:18px;}
+.modal-close:hover{border-color:var(--border2);color:var(--white);}
+.img-upload-area{border:1.5px dashed var(--border2);border-radius:var(--radius);padding:0;margin-bottom:20px;transition:var(--tr);cursor:none;position:relative;overflow:hidden;background:var(--surface);}
+.img-upload-area:hover{border-color:rgba(255,255,255,.25);}
+.img-upload-placeholder{padding:32px;text-align:center;pointer-events:none;}
+.img-upload-placeholder svg{display:block;margin:0 auto 10px;opacity:.4;}
+.img-upload-placeholder p{font-family:'DM Mono',monospace;font-size:11px;letter-spacing:.2em;color:var(--dim);}
+.img-upload-placeholder small{font-family:'DM Mono',monospace;font-size:9px;color:var(--dim);opacity:.6;display:block;margin-top:4px;}
+#img-preview{width:100%;max-height:240px;object-fit:cover;display:none;border-radius:calc(var(--radius) - 2px);}
+.img-upload-area.has-img #img-preview{display:block;}
+.img-upload-area.has-img .img-upload-placeholder{display:none;}
+.img-change-btn{position:absolute;bottom:8px;right:8px;background:rgba(0,0,0,.7);border:1px solid var(--border2);border-radius:100px;padding:6px 14px;font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.2em;color:var(--silver);cursor:none;transition:var(--tr);display:none;}
+.img-upload-area.has-img .img-change-btn{display:block;}
+#img-file-input{display:none;}
+.form-group{margin-bottom:18px;}
+.form-label{display:block;font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.3em;text-transform:uppercase;color:var(--silver);margin-bottom:8px;}
+.form-input{width:100%;padding:13px 16px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);color:var(--white);font-family:'Syne',sans-serif;font-size:14px;outline:none;transition:var(--tr);}
+.form-input:focus{border-color:var(--border2);background:var(--bg3);}
+.form-input::placeholder{color:var(--dim);}
+textarea.form-input{resize:vertical;min-height:80px;}
+select.form-input{cursor:none;}
+select.form-input option{background:var(--bg2);}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.link-hint{font-family:'DM Mono',monospace;font-size:9px;color:var(--dim);letter-spacing:.15em;margin-top:6px;display:block;}
+.link-hint a{color:var(--gold);text-decoration:none;}
+.modal-submit{width:100%;padding:16px;background:var(--white);color:var(--bg);border:none;border-radius:100px;font-family:'DM Mono',monospace;font-size:11px;font-weight:600;letter-spacing:.25em;text-transform:uppercase;cursor:none;transition:var(--tr);margin-top:4px;}
+.modal-submit:hover{transform:translateY(-2px);box-shadow:0 12px 40px rgba(255,255,255,.15);}
+.modal-submit:disabled{opacity:.5;cursor:not-allowed;transform:none;}
+#about{padding:120px 0;border-top:1px solid var(--border);}
+.about-grid{display:grid;grid-template-columns:1fr 1fr;gap:80px;align-items:center;}
+.about-img-wrap{position:relative;aspect-ratio:4/5;border-radius:var(--radius-lg);overflow:hidden;border:1px solid var(--border);}
+.about-img-wrap img{width:100%;height:100%;object-fit:cover;filter:grayscale(20%);}
+.about-label{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.4em;color:var(--gold);text-transform:uppercase;margin-bottom:20px;display:block;}
+.about-heading{font-family:'Bebas Neue',sans-serif;font-size:clamp(48px,6vw,72px);line-height:1;letter-spacing:.06em;margin-bottom:24px;}
+.about-heading .dim{color:var(--dim);}
+.about-text{font-size:15px;line-height:1.8;color:var(--silver);margin-bottom:16px;}
+.about-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;margin-top:40px;border-top:1px solid var(--border);padding-top:40px;}
+.stat-num{font-family:'Bebas Neue',sans-serif;font-size:48px;color:var(--white);letter-spacing:.05em;line-height:1;}
+.stat-label{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.3em;color:var(--dim);text-transform:uppercase;margin-top:4px;}
+#contact{padding:120px 0;border-top:1px solid var(--border);}
+.contact-inner{display:grid;grid-template-columns:1fr 1fr;gap:80px;align-items:start;}
+.contact-heading{font-family:'Bebas Neue',sans-serif;font-size:clamp(56px,8vw,96px);letter-spacing:.06em;line-height:.9;margin-bottom:24px;}
+.contact-text{font-size:14px;color:var(--silver);line-height:1.8;}
+.social-list{list-style:none;margin-top:40px;display:flex;flex-direction:column;gap:4px;}
+.social-item a{display:flex;align-items:center;gap:16px;padding:16px 20px;border-radius:var(--radius);border:1px solid transparent;text-decoration:none;transition:var(--tr);color:var(--silver);}
+.social-item a:hover{border-color:var(--border);background:var(--glow);color:var(--white);}
+.social-icon{width:40px;height:40px;background:var(--surface);border:1px solid var(--border);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.social-name{font-weight:700;font-size:15px;display:block;color:var(--white);}
+.social-handle{font-family:'DM Mono',monospace;font-size:11px;color:var(--dim);}
+.contact-form-title{font-family:'Bebas Neue',sans-serif;font-size:32px;letter-spacing:.1em;margin-bottom:24px;}
+footer{border-top:1px solid var(--border);padding:48px 0;text-align:center;}
+.footer-logo{font-family:'Bebas Neue',sans-serif;font-size:40px;letter-spacing:.15em;margin-bottom:8px;}
+.footer-tagline{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.4em;color:var(--dim);text-transform:uppercase;}
+.footer-copy{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.2em;color:var(--dim);margin-top:32px;}
+.wl-panel{position:fixed;right:0;top:0;bottom:0;z-index:200;width:360px;max-width:90vw;background:var(--bg2);border-left:1px solid var(--border2);transform:translateX(100%);transition:var(--tr);display:flex;flex-direction:column;padding:24px;}
+.wl-panel.open{transform:translateX(0);}
+.wl-panel-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;}
+.wl-panel-title{font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:.1em;}
+.wl-close{background:none;border:1px solid var(--border);color:var(--silver);width:34px;height:34px;border-radius:50%;cursor:none;transition:var(--tr);display:flex;align-items:center;justify-content:center;font-size:16px;}
+.wl-close:hover{color:var(--white);border-color:var(--border2);}
+.wl-items{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:12px;}
+.wl-item{display:flex;gap:12px;align-items:center;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:12px;}
+.wl-item img{width:56px;height:56px;object-fit:cover;border-radius:8px;flex-shrink:0;}
+.wl-item-info{flex:1;min-width:0;}
+.wl-item-name{font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.wl-item-price{font-family:'DM Mono',monospace;font-size:12px;color:var(--silver);}
+.wl-item-rm{background:none;border:none;color:var(--dim);cursor:none;padding:4px;transition:var(--tr);}
+.wl-item-rm:hover{color:#e05;}
+.wl-empty{text-align:center;padding:60px 0;color:var(--dim);font-family:'DM Mono',monospace;font-size:12px;letter-spacing:.2em;}
+.toast{position:fixed;bottom:32px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--bg2);border:1px solid var(--border2);border-radius:100px;padding:14px 28px;font-family:'DM Mono',monospace;font-size:11px;letter-spacing:.2em;color:var(--white);z-index:9999;transition:var(--tr);white-space:nowrap;backdrop-filter:blur(12px);}
+.toast.show{transform:translateX(-50%) translateY(0);}
+.confirm-overlay{position:fixed;inset:0;z-index:600;background:rgba(0,0,0,.85);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;padding:24px;opacity:0;visibility:hidden;transition:var(--tr);}
+.confirm-overlay.open{opacity:1;visibility:visible;}
+.confirm-box{background:var(--bg2);border:1px solid var(--redborder);border-radius:var(--radius-lg);padding:36px;width:100%;max-width:380px;text-align:center;transform:scale(.95);transition:var(--tr);}
+.confirm-overlay.open .confirm-box{transform:scale(1);}
+.confirm-title{font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:.1em;margin-bottom:12px;}
+.confirm-msg{font-family:'DM Mono',monospace;font-size:11px;color:var(--silver);letter-spacing:.1em;line-height:1.6;margin-bottom:28px;}
+.confirm-actions{display:flex;gap:12px;}
+.confirm-cancel{flex:1;padding:13px;background:transparent;border:1px solid var(--border2);border-radius:100px;font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--silver);cursor:none;transition:var(--tr);}
+.confirm-cancel:hover{color:var(--white);}
+.confirm-delete{flex:1;padding:13px;background:var(--red);border:1px solid var(--redborder);border-radius:100px;font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--redc);cursor:none;transition:var(--tr);}
+.confirm-delete:hover{background:rgba(220,50,50,.25);}
+@media(max-width:768px){
+  nav{top:12px;padding:12px 20px;width:calc(100% - 32px);}
+  .nav-links{display:none;position:fixed;inset:0;background:rgba(0,0,0,.97);flex-direction:column;align-items:center;justify-content:center;z-index:300;}
+  .nav-links.open{display:flex;}
+  .nav-links a{font-size:28px;padding:20px;font-family:'Bebas Neue',sans-serif;letter-spacing:.15em;}
+  .hamburger{display:flex;}
+  .hamburger.open span:nth-child(1){transform:translateY(6.5px) rotate(45deg);}
+  .hamburger.open span:nth-child(2){opacity:0;}
+  .hamburger.open span:nth-child(3){transform:translateY(-6.5px) rotate(-45deg);}
+  .hero-title{font-size:clamp(72px,22vw,120px);}
+  .about-grid,.contact-inner{grid-template-columns:1fr;gap:48px;}
+  .product-grid{grid-template-columns:repeat(auto-fill,minmax(260px,1fr));}
+  .form-row{grid-template-columns:1fr;}
+  body{cursor:auto;}
+  #cursor,#cursor-ring{display:none;}
+}
+@media(max-width:480px){
+  .product-grid{grid-template-columns:1fr 1fr;gap:12px;}
+  .product-info{padding:12px;}
+  .product-name{font-size:13px;}
+  .product-price{font-size:20px;}
+  .buy-btn{font-size:8px;padding:10px 10px;}
+  .catalog-controls{flex-direction:column;align-items:stretch;}
+  .search-wrap{max-width:100%;}
+}
+</style>
+</head>
+<body>
+
+<div id="cursor"></div>
+<div id="cursor-ring"></div>
+<div id="loader"><div class="loader-logo">ORELIX4</div><div class="loader-bar"></div></div>
+<div class="toast" id="toast"></div>
+
+<div class="confirm-overlay" id="confirm-overlay">
+  <div class="confirm-box">
+    <div class="confirm-title">Delete Product?</div>
+    <div class="confirm-msg">Produk ini akan dihapus permanen dari katalog.</div>
+    <div class="confirm-actions">
+      <button class="confirm-cancel" id="confirm-cancel">Cancel</button>
+      <button class="confirm-delete" id="confirm-delete">Delete</button>
+    </div>
+  </div>
+</div>
+
+<nav id="navbar">
+  <a href="#home" class="nav-logo">ORELIX4<span>Finds & More</span></a>
+  <ul class="nav-links" id="nav-links">
+    <li><a href="#home" class="active">Home</a></li>
+    <li><a href="#catalog">Catalog</a></li>
+    <li><a href="#about">About</a></li>
+    <li><a href="#contact">Contact</a></li>
+  </ul>
+  <div class="nav-actions">
+    <button class="nav-icon-btn" id="search-nav-btn">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    </button>
+    <button class="nav-icon-btn" id="wl-nav-btn">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+      <span class="wcount" id="wcount">0</span>
+    </button>
+    <button class="hamburger" id="hamburger"><span></span><span></span><span></span></button>
+  </div>
+</nav>
+
+<div class="wl-panel" id="wl-panel">
+  <div class="wl-panel-header">
+    <span class="wl-panel-title">Wishlist</span>
+    <button class="wl-close" id="wl-close">×</button>
+  </div>
+  <div class="wl-items" id="wl-items"><div class="wl-empty">Wishlist kosong</div></div>
+</div>
+
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title" id="modal-title">Add Product</span>
+      <button class="modal-close" id="modal-close">×</button>
+    </div>
+    <div class="img-upload-area" id="img-upload-area" onclick="document.getElementById('img-file-input').click()">
+      <div class="img-upload-placeholder">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+        <p>Klik untuk upload foto produk</p>
+        <small>JPG, PNG, WEBP — max 5MB</small>
+      </div>
+      <img id="img-preview" src="" alt="Preview">
+      <button class="img-change-btn" onclick="event.stopPropagation();document.getElementById('img-file-input').click()">Ganti Foto</button>
+    </div>
+    <input type="file" id="img-file-input" accept="image/*">
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Nama Produk *</label>
+        <input type="text" id="f-name" class="form-input" placeholder="cth: Black Oversized Hoodie">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Kategori</label>
+        <select id="f-cat" class="form-input">
+          <option value="All">All</option>
+          <option value="Hoodies">Hoodies</option>
+          <option value="Tees">Tees</option>
+          <option value="Pants">Pants</option>
+          <option value="Outerwear">Outerwear</option>
+          <option value="Accessories">Accessories</option>
+          <option value="Footwear">Footwear</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Harga (IDR) *</label>
+        <input type="text" id="f-price" class="form-input" placeholder="cth: 150.000">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Badge (opsional)</label>
+        <input type="text" id="f-badge" class="form-input" placeholder="cth: NEW DROP">
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Deskripsi Singkat</label>
+      <textarea id="f-desc" class="form-input" placeholder="Deskripsikan produk secara singkat..."></textarea>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Link TikTok Shop *</label>
+      <input type="url" id="f-link" class="form-input" placeholder="https://vt.tiktok.com/xxxxxxx">
+      <span class="link-hint">Buka TikTok Shop → tap produk → tap Share → Copy Link.</span>
+    </div>
+    <button class="modal-submit" id="modal-submit">Simpan Produk</button>
+  </div>
+</div>
+
+<!-- HERO -->
+<section id="home">
+  <div class="hero-bg"></div>
+  <div class="hero-grid"></div>
+  <div class="hero-content">
+    <div class="hero-tag">★ New Collection Available Now</div>
+    <h1 class="hero-title">ORELI<span class="outline">X4</span></h1>
+    <p class="hero-sub"><em>Finds &amp; More</em> &nbsp;·&nbsp; Minimal Streetwear Collection</p>
+    <div class="hero-cta">
+      <a href="#catalog" class="btn-primary">Shop Now</a>
+      <a href="#about" class="btn-secondary">Our Story</a>
+    </div>
+  </div>
+  <div class="hero-scroll"><span>Scroll</span><div class="scroll-line"></div></div>
+</section>
+
+<!-- CATALOG -->
+<section id="catalog">
+  <div class="container">
+    <div class="section-header">
+      <span class="section-tag">— Catalog</span>
+      <h2 class="section-title">THE DROP</h2>
+      <div class="section-line"></div>
+    </div>
+    <div class="catalog-controls">
+      <div class="search-wrap">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" id="search-input" placeholder="Cari produk...">
+      </div>
+      <div class="filter-wrap" id="filter-wrap">
+        <button class="filter-btn active" data-cat="All">All</button>
+        <button class="filter-btn" data-cat="Hoodies">Hoodies</button>
+        <button class="filter-btn" data-cat="Tees">Tees</button>
+        <button class="filter-btn" data-cat="Pants">Pants</button>
+        <button class="filter-btn" data-cat="Outerwear">Outerwear</button>
+        <button class="filter-btn" data-cat="Accessories">Accessories</button>
+        <button class="filter-btn" data-cat="Footwear">Footwear</button>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+        <div class="sync-badge" id="sync-badge"><div class="sync-dot loading" id="sync-dot"></div><span id="sync-text">Connecting...</span></div>
+        <button class="add-btn" id="open-modal-btn">＋ Add Product</button>
+      </div>
+    </div>
+    <div class="product-grid" id="product-grid"></div>
+  </div>
+</section>
+
+<!-- ABOUT -->
+<section id="about">
+  <div class="container">
+    <div class="about-grid">
+      <div class="about-img-wrap">
+        <img src="https://images.unsplash.com/photo-1523398002811-999ca8dec234?w=600&q=80&auto=format" alt="ORELIX4">
+      </div>
+      <div>
+        <span class="about-label">— Our Story</span>
+        <h2 class="about-heading">ABOUT <br><span class="dim">ORELIX4</span></h2>
+        <p class="about-text">ORELIX4 adalah kurated fashion affiliate yang berfokus pada streetwear dan outfit hype berkualitas. Kami menyaring produk terbaik dari TikTok Shop agar kamu bisa tampil stylish tanpa ribet.</p>
+        <p class="about-text">Setiap item yang ada di katalog ini sudah kami seleksi secara personal — minimal, clean, dan timeless. Bukan sekadar fashion, ini adalah statement.</p>
+        <div class="about-stats">
+          <div><div class="stat-num">50+</div><div class="stat-label">Products</div></div>
+          <div><div class="stat-num">10K</div><div class="stat-label">Followers</div></div>
+          <div><div class="stat-num">100%</div><div class="stat-label">Curated</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CONTACT -->
+<section id="contact">
+  <div class="container">
+    <div class="contact-inner">
+      <div>
+        <h2 class="contact-heading">GET IN TOUCH</h2>
+        <p class="contact-text">Punya pertanyaan tentang produk atau kolaborasi? Hubungi kami lewat sosial media di bawah ini.</p>
+        <ul class="social-list">
+          <li class="social-item"><a href="https://www.tiktok.com/@orelix4" target="_blank">
+            <span class="social-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.34-6.34V8.72a8.19 8.19 0 0 0 4.78 1.52V6.8a4.85 4.85 0 0 1-1.02-.11z"/></svg></span>
+            <span><span class="social-name">TikTok Shop</span><span class="social-handle">@orelix4</span></span>
+          </a></li>
+          <li class="social-item"><a href="https://www.instagram.com/orelix4" target="_blank">
+            <span class="social-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg></span>
+            <span><span class="social-name">Instagram</span><span class="social-handle">@orelix4</span></span>
+          </a></li>
+          <li class="social-item"><a href="https://wa.me/62" target="_blank">
+            <span class="social-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z"/></svg></span>
+            <span><span class="social-name">WhatsApp</span><span class="social-handle">DM for collab</span></span>
+          </a></li>
+        </ul>
+      </div>
+      <div>
+        <div class="contact-form-title">Send Message</div>
+        <div class="form-group"><label class="form-label">Name</label><input type="text" class="form-input" placeholder="Nama kamu"></div>
+        <div class="form-group"><label class="form-label">Email / WA</label><input type="text" class="form-input" placeholder="Kontak kamu"></div>
+        <div class="form-group"><label class="form-label">Message</label><textarea class="form-input" placeholder="Tulis pesanmu..." style="min-height:120px"></textarea></div>
+        <button class="btn-primary" style="width:100%;cursor:none" onclick="showToast('Pesan terkirim! Kami akan segera membalas ✓')">Kirim Pesan</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="container">
+    <div class="footer-logo">ORELIX4</div>
+    <div class="footer-tagline">Finds & More · Minimal Streetwear</div>
+    <div class="footer-copy">© 2024 ORELIX4. All rights reserved.</div>
+  </div>
+</footer>
+
+<script>
+// ── STATE ──────────────────────────────────────────────────
+let products = [];
+let wishlist = [];
+let filter   = 'All';
+let searchQ  = '';
+let editId   = null;
+let pendingDelId = null;
+let imgBase64 = '';
+let nextId   = 100;
+let storageReady = false;
+
+// ── STORAGE HELPERS ────────────────────────────────────────
+async function storageSave(key, val, shared) {
+  try { await window.storage.set(key, JSON.stringify(val), shared); } catch(e) {}
+}
+async function storageLoad(key, shared) {
+  try {
+    const r = await window.storage.get(key, shared);
+    return r ? JSON.parse(r.value) : null;
+  } catch(e) { return null; }
+}
+
+// ── SYNC STATUS UI ─────────────────────────────────────────
+function setSyncStatus(state, text) {
+  const dot  = document.getElementById('sync-dot');
+  const span = document.getElementById('sync-text');
+  dot.className = 'sync-dot ' + state;
+  span.textContent = text;
+}
+
+// ── INIT ───────────────────────────────────────────────────
+async function init() {
+  setSyncStatus('loading', 'Loading...');
+  try {
+    const saved = await storageLoad('orelix4_products', true);
+    if (saved && saved.length > 0) {
+      products = saved;
+      nextId   = Math.max(...products.map(p => p.id), 99) + 1;
+    } else {
+      products = [];
+    }
+    storageReady = true;
+    setSyncStatus('ok', 'Synced ✓');
+  } catch(e) {
+    storageReady = false;
+    setSyncStatus('err', 'Offline');
+    products = [];
+  }
+
+  const wl = await storageLoad('orelix4_wishlist', false);
+  wishlist = wl || [];
+
+  renderProducts();
+  updateWLUI();
+}
+
+// ── LOADER ─────────────────────────────────────────────────
+window.addEventListener('load', () => {
+  setTimeout(async () => {
+    document.getElementById('loader').classList.add('hidden');
+    await init();
+  }, 1400);
+});
+
+// ── CURSOR ─────────────────────────────────────────────────
+const $cursor = document.getElementById('cursor');
+const $ring   = document.getElementById('cursor-ring');
+document.addEventListener('mousemove', e => {
+  $cursor.style.left = e.clientX+'px'; $cursor.style.top = e.clientY+'px';
+  $ring.style.left   = e.clientX+'px'; $ring.style.top   = e.clientY+'px';
+});
+document.addEventListener('mouseover', e => {
+  document.body.classList.toggle('hovering', !!e.target.closest('a,button,.product-img-wrap,.filter-btn'));
+});
+
+// ── NAVBAR ─────────────────────────────────────────────────
+window.addEventListener('scroll', () => {
+  document.getElementById('navbar').classList.toggle('scrolled', window.scrollY > 60);
+});
+const $hamburger = document.getElementById('hamburger');
+const $navLinks  = document.getElementById('nav-links');
+$hamburger.addEventListener('click', () => {
+  $hamburger.classList.toggle('open');
+  $navLinks.classList.toggle('open');
+});
+$navLinks.querySelectorAll('a').forEach(a => a.addEventListener('click', () => {
+  $hamburger.classList.remove('open'); $navLinks.classList.remove('open');
+}));
+document.getElementById('search-nav-btn').addEventListener('click', () => {
+  document.getElementById('catalog').scrollIntoView({behavior:'smooth'});
+  setTimeout(() => document.getElementById('search-input').focus(), 600);
+});
+
+// ── RENDER ─────────────────────────────────────────────────
+function renderProducts() {
+  const grid = document.getElementById('product-grid');
+  const list = products.filter(p => {
+    const mc = filter === 'All' || p.cat === filter;
+    const mq = p.name.toLowerCase().includes(searchQ.toLowerCase()) ||
+               (p.desc||'').toLowerCase().includes(searchQ.toLowerCase());
+    return mc && mq;
+  });
+
+  if (!list.length) {
+    grid.innerHTML = `<div class="empty-state">
+      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin:0 auto 16px;display:block;opacity:.3"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      ${products.length === 0 ? 'Belum ada produk — klik + Add Product untuk mulai' : 'Produk tidak ditemukan'}
+    </div>`;
+    return;
+  }
+
+  grid.innerHTML = list.map((p, i) => {
+    const inWL = wishlist.some(w => w.id === p.id);
+    return `
+    <div class="product-card" data-id="${p.id}" style="animation-delay:${i*0.07}s">
+      <a class="product-img-wrap" href="${p.link}" target="_blank" rel="noopener">
+        ${p.badge ? `<div class="product-badge">${p.badge}</div>` : ''}
+        <img src="${p.img}" alt="${p.name}" loading="lazy"
+             onerror="this.src='https://images.unsplash.com/photo-1523398002811-999ca8dec234?w=500&q=80'">
+        <div class="img-overlay"><span class="img-overlay-label">Beli di TikTok Shop ↗</span></div>
+        <button class="wl-btn ${inWL?'active':''}" onclick="toggleWL(event,${p.id})">
+          <svg viewBox="0 0 24 24" fill="${inWL?'currentColor':'none'}" stroke="currentColor" stroke-width="2">
+            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+          </svg>
+        </button>
+      </a>
+      <div class="product-info">
+        <div class="product-cat">${p.cat}</div>
+        <div class="product-name">${p.name}</div>
+        <div class="product-desc">${p.desc||''}</div>
+        <div class="product-footer">
+          <div class="product-price"><span>Rp</span>${p.price}</div>
+          <a href="${p.link}" target="_blank" rel="noopener" class="buy-btn">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+            Buy on TikTok
+          </a>
+        </div>
+      </div>
+      <div class="card-actions">
+        <button class="card-edit-btn" onclick="openEdit(${p.id})">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          Edit
+        </button>
+        <button class="card-del-btn" onclick="askDelete(${p.id})">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+          Delete
+        </button>
+      </div>
+    </div>`;
+  }).join('');
+
+  grid.querySelectorAll('.product-card').forEach(card => {
+    card.addEventListener('mousemove', e => {
+      const r  = card.getBoundingClientRect();
+      const rx = ((e.clientY - r.top  - r.height/2) / (r.height/2)) * -5;
+      const ry = ((e.clientX - r.left - r.width /2) / (r.width /2)) *  5;
+      card.style.transform = `perspective(1200px) rotateX(${rx}deg) rotateY(${ry}deg) translateY(-8px)`;
+    });
+    card.addEventListener('mouseleave', () => { card.style.transform = ''; });
+  });
+}
+
+// ── FILTER & SEARCH ────────────────────────────────────────
+document.getElementById('filter-wrap').addEventListener('click', e => {
+  const btn = e.target.closest('.filter-btn'); if (!btn) return;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  filter = btn.dataset.cat;
+  renderProducts();
+});
+document.getElementById('search-input').addEventListener('input', e => {
+  searchQ = e.target.value; renderProducts();
+});
+
+// ── WISHLIST ───────────────────────────────────────────────
+async function toggleWL(e, id) {
+  e.preventDefault(); e.stopPropagation();
+  const p = products.find(x => x.id === id); if (!p) return;
+  const idx = wishlist.findIndex(w => w.id === id);
+  if (idx === -1) { wishlist.push(p); showToast(`Added "${p.name}" ke wishlist ♡`); }
+  else { wishlist.splice(idx,1); showToast('Dihapus dari wishlist'); }
+  await storageSave('orelix4_wishlist', wishlist, false);
+  updateWLUI(); renderProducts();
+}
+function updateWLUI() {
+  const n  = wishlist.length;
+  const el = document.getElementById('wcount');
+  el.textContent = n; el.classList.toggle('show', n > 0);
+  const wrap = document.getElementById('wl-items');
+  if (!n) { wrap.innerHTML = '<div class="wl-empty">Wishlist kosong</div>'; return; }
+  wrap.innerHTML = wishlist.map(p => `
+    <div class="wl-item">
+      <img src="${p.img}" alt="${p.name}" onerror="this.src='https://images.unsplash.com/photo-1523398002811-999ca8dec234?w=100'">
+      <div class="wl-item-info">
+        <div class="wl-item-name">${p.name}</div>
+        <div class="wl-item-price">Rp${p.price}</div>
+      </div>
+      <button class="wl-item-rm" onclick="removeWL(${p.id})">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>`).join('');
+}
+async function removeWL(id) {
+  wishlist = wishlist.filter(w => w.id !== id);
+  await storageSave('orelix4_wishlist', wishlist, false);
+  updateWLUI(); renderProducts();
+}
+document.getElementById('wl-nav-btn').addEventListener('click', () => document.getElementById('wl-panel').classList.toggle('open'));
+document.getElementById('wl-close').addEventListener('click', () => document.getElementById('wl-panel').classList.remove('open'));
+
+// ── MODAL ──────────────────────────────────────────────────
+function openAdd() {
+  editId = null; imgBase64 = '';
+  document.getElementById('modal-title').textContent = 'Add Product';
+  document.getElementById('modal-submit').textContent = 'Simpan Produk';
+  ['f-name','f-price','f-badge','f-desc','f-link'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('f-cat').value = 'All';
+  document.getElementById('img-preview').src = '';
+  document.getElementById('img-upload-area').classList.remove('has-img');
+  document.getElementById('img-file-input').value = '';
+  document.getElementById('modal-overlay').classList.add('open');
+}
+function openEdit(id) {
+  const p = products.find(x => x.id === id); if (!p) return;
+  editId = id; imgBase64 = p.img;
+  document.getElementById('modal-title').textContent = 'Edit Product';
+  document.getElementById('modal-submit').textContent = 'Update Produk';
+  document.getElementById('f-name').value  = p.name;
+  document.getElementById('f-cat').value   = p.cat;
+  document.getElementById('f-price').value = p.price;
+  document.getElementById('f-badge').value = p.badge || '';
+  document.getElementById('f-desc').value  = p.desc || '';
+  document.getElementById('f-link').value  = p.link;
+  document.getElementById('img-preview').src = p.img;
+  document.getElementById('img-upload-area').classList.add('has-img');
+  document.getElementById('modal-overlay').classList.add('open');
+}
+function closeModal() {
+  document.getElementById('modal-overlay').classList.remove('open');
+  editId = null; imgBase64 = '';
+}
+document.getElementById('open-modal-btn').addEventListener('click', openAdd);
+document.getElementById('modal-close').addEventListener('click', closeModal);
+document.getElementById('modal-overlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('modal-overlay')) closeModal();
+});
+
+document.getElementById('img-file-input').addEventListener('change', e => {
+  const file = e.target.files[0]; if (!file) return;
+  if (file.size > 5*1024*1024) { showToast('File terlalu besar (maks 5MB)'); return; }
+  const reader = new FileReader();
+  reader.onload = ev => {
+    imgBase64 = ev.target.result;
+    document.getElementById('img-preview').src = imgBase64;
+    document.getElementById('img-upload-area').classList.add('has-img');
+  };
+  reader.readAsDataURL(file);
+});
+
+document.getElementById('modal-submit').addEventListener('click', async () => {
+  const name  = document.getElementById('f-name').value.trim();
+  const price = document.getElementById('f-price').value.trim();
+  const link  = document.getElementById('f-link').value.trim();
+  if (!name)  { showToast('Nama produk harus diisi!'); return; }
+  if (!price) { showToast('Harga harus diisi!'); return; }
+  if (!link)  { showToast('Link TikTok Shop harus diisi!'); return; }
+  if (!link.startsWith('http')) { showToast('Link harus diawali https://'); return; }
+
+  const btn = document.getElementById('modal-submit');
+  btn.disabled = true; btn.textContent = 'Menyimpan...';
+  setSyncStatus('loading', 'Saving...');
+
+  const data = {
+    name, price, link,
+    cat:   document.getElementById('f-cat').value,
+    badge: document.getElementById('f-badge').value.trim().toUpperCase(),
+    desc:  document.getElementById('f-desc').value.trim() || 'Curated streetwear pick.',
+    img:   imgBase64 || 'https://images.unsplash.com/photo-1523398002811-999ca8dec234?w=500&q=80'
+  };
+
+  if (editId !== null) {
+    const idx = products.findIndex(p => p.id === editId);
+    if (idx !== -1) products[idx] = { ...products[idx], ...data };
+    showToast(`"${name}" berhasil diupdate ✓`);
+  } else {
+    data.id = nextId++;
+    products.unshift(data);
+    showToast(`"${name}" ditambahkan ke katalog ✓`);
+  }
+
+  await storageSave('orelix4_products', products, true);
+  setSyncStatus('ok', 'Synced ✓');
+  btn.disabled = false;
+  btn.textContent = editId !== null ? 'Update Produk' : 'Simpan Produk';
+  closeModal();
+  renderProducts();
+});
+
+// ── DELETE ─────────────────────────────────────────────────
+function askDelete(id) {
+  pendingDelId = id;
+  document.getElementById('confirm-overlay').classList.add('open');
+}
+document.getElementById('confirm-cancel').addEventListener('click', () => {
+  document.getElementById('confirm-overlay').classList.remove('open');
+  pendingDelId = null;
+});
+document.getElementById('confirm-delete').addEventListener('click', async () => {
+  if (pendingDelId !== null) {
+    const p = products.find(x => x.id === pendingDelId);
+    products = products.filter(x => x.id !== pendingDelId);
+    wishlist = wishlist.filter(x => x.id !== pendingDelId);
+    setSyncStatus('loading', 'Saving...');
+    await storageSave('orelix4_products', products, true);
+    await storageSave('orelix4_wishlist', wishlist, false);
+    setSyncStatus('ok', 'Synced ✓');
+    renderProducts(); updateWLUI();
+    showToast(`"${p?.name||'Produk'}" dihapus`);
+  }
+  document.getElementById('confirm-overlay').classList.remove('open');
+  pendingDelId = null;
+});
+
+// ── TOAST ──────────────────────────────────────────────────
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(t._t);
+  t._t = setTimeout(() => t.classList.remove('show'), 2800);
+}
+</script>
+</body>
+</html>
